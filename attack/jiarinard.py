@@ -230,6 +230,7 @@ def main():
 
             print('***********************************')
             print(f'Original label of x_seed: {pred}')
+            print(f'Prediction on x_seed: {predict(args.nn, x_seed)}')
             print(f'alpha = {alpha}')
             print(f'Prediction on x_0 = alpha * x_seed: {predict(args.nn, x_0)}')
 
