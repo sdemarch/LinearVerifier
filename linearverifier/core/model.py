@@ -5,10 +5,10 @@ This module defines the behavior of a neural network model
 
 from mpmath import mp
 
-from core import ops
-from core.layer import LinearLayer
-from parser import onnx
-from parser import vnnlib
+from linearverifier.core import ops
+from linearverifier.core.layer import LinearLayer
+from linearverifier.parser import onnx
+from linearverifier.parser import vnnlib
 
 
 class ModelOptions:

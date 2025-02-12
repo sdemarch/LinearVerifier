@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 
 from mpmath import mp
 
-from core.model import LinearModel
+from linearverifier.core.model import LinearModel
 
 parser = ArgumentParser(description="Linear neural networks verifier")
 parser.add_argument('net', type=str, help='ONNX model file')

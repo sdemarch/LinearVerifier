@@ -5,7 +5,7 @@ This module reads ONNX files representing neural networks
 import onnx
 from mpmath import mp
 
-from core.layer import LinearLayer, Layer
+from linearverifier.core.layer import LinearLayer, Layer
 
 
 def to_nn(onnx_path: str) -> list[Layer]:
