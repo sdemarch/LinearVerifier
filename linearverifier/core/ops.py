@@ -82,7 +82,7 @@ def matmul(a: list, b: list):
         for j in range(q):
             s = 0
             for k in range(m):
-                s += a[i][k] * b[k]
+                s += a[i][k] * b[k][0]
             result[i][j] = s
 
     return result
