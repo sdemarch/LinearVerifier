@@ -16,8 +16,12 @@ class ModelOptions:
 
 
 class LinearModel:
-    def __init__(self, onnx_path: str, options: ModelOptions = None):
+    def __init__(self, onnx_path: str, w_path='../../Data/mnist_weights.txt', b_path='../../Data/mnist_biases.txt',
+                 options: ModelOptions = None):
         self.onnx_path = onnx_path
+
+        self.w_path = w_path
+        self.b_path = b_path
         self.options = options
 
         self.layer = self.parse_layer()
@@ -56,7 +60,7 @@ class LinearModel:
 
     def parse_layer(self) -> LinearLayer:
         """Procedure to read the first layer of a ONNX network"""
-        nn = onnx.to_nn(self.onnx_path)
+        nn = onnx.nn_from_weights(self.w_path, self.b_path)  # nn_from_onnx(self.onnx_path)
         return nn[0]
 
     def propagate(self, lbs: mp.matrix, ubs: mp.matrix) -> tuple[mp.matrix, mp.matrix]:

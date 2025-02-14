@@ -2,13 +2,39 @@
 This module reads ONNX files representing neural networks
 """
 
+import numpy as np
 import onnx
-from mpmath import mp
 
 from linearverifier.core.layer import LinearLayer, Layer
 
 
-def to_nn(onnx_path: str) -> list[Layer]:
+def read_weights_from_file(weights_file: str) -> list[list[float]]:
+    """Procedure to read a file containing weights"""
+
+    with open(weights_file, 'r') as f:
+        lines = f.readlines()
+        if ',' in lines[0]:
+            result = [[float(v) for v in line.split(',')] for line in lines]
+        else:
+            result = [[float(line)] for line in lines]
+
+    return result
+
+
+def nn_from_weights(w_file: str, b_file: str) -> list[Layer]:
+    """Procedure to read a file containing weights"""
+
+    # Create layers
+    net = []
+
+    weights = read_weights_from_file(w_file)
+    bias = read_weights_from_file(b_file)
+
+    net.append(LinearLayer(weights, bias))
+    return net
+
+
+def nn_from_onnx(onnx_path: str) -> list[Layer]:
     """Procedure to read a ONNX network as a list of Layer objects"""
 
     # Open model
@@ -31,12 +57,11 @@ def to_nn(onnx_path: str) -> list[Layer]:
                     weight = parameters[node.input[1]].T
 
             neurons = weight.shape[0]
-            weight = mp.matrix(weight)
 
-            if len(node.input) <= 2:
-                bias = mp.zeros(neurons, 1)
-            else:
-                bias = mp.matrix(parameters[node.input[2]])
+            bias = np.zeros((neurons, 1))
+            if len(node.input) > 2:
+                for i in range(len(parameters[node.input[2]])):
+                    bias[i] = parameters[node.input[2]][i]
 
             net.append(LinearLayer(weight, bias))
 
