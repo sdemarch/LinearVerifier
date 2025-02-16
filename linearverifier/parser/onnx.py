@@ -8,7 +8,7 @@ import onnx
 from linearverifier.core.layer import LinearLayer, Layer
 
 
-def read_weights_from_file(weights_file: str) -> list[list[float]]:
+def read_weights_from_file(weights_file: str) -> list[float] | list[list[float]]:
     """Procedure to read a file containing weights"""
 
     with open(weights_file, 'r') as f:
@@ -16,7 +16,7 @@ def read_weights_from_file(weights_file: str) -> list[list[float]]:
         if ',' in lines[0]:
             result = [[float(v) for v in line.split(',')] for line in lines]
         else:
-            result = [[float(line)] for line in lines]
+            result = [float(line) for line in lines]
 
     return result
 
@@ -60,10 +60,9 @@ def nn_from_onnx(onnx_path: str) -> list[Layer]:
 
             bias = np.zeros((neurons, 1))
             if len(node.input) > 2:
-                for i in range(len(parameters[node.input[2]])):
-                    bias[i] = parameters[node.input[2]][i]
+                bias = parameters[node.input[2]]
 
-            net.append(LinearLayer(weight, bias))
+            net.append(LinearLayer(weight.tolist(), bias.tolist()))
 
     assert (len(net)) == 1
     return net

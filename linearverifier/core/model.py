@@ -3,12 +3,12 @@ This module defines the behavior of a neural network model
 
 """
 
-from mpmath import mp
-
 from linearverifier.core import ops
 from linearverifier.core.layer import LinearLayer
 from linearverifier.parser import onnx
 from linearverifier.parser import vnnlib
+
+DATA_PATH = 'Data'
 
 
 class ModelOptions:
@@ -16,7 +16,7 @@ class ModelOptions:
 
 
 class LinearModel:
-    def __init__(self, onnx_path: str, w_path='../../Data/mnist_weights.txt', b_path='../../Data/mnist_biases.txt',
+    def __init__(self, onnx_path: str, w_path=f'{DATA_PATH}/mnist_weights.txt', b_path=f'{DATA_PATH}/mnist_bias.txt',
                  options: ModelOptions = None):
         self.onnx_path = onnx_path
 
@@ -27,49 +27,43 @@ class LinearModel:
         self.layer = self.parse_layer()
 
     @staticmethod
-    def check_robust(lbs: mp.matrix, ubs: mp.matrix, label: int) -> bool:
+    def check_robust(lbs: list[float], ubs: list[float], label: int) -> bool:
         """Procedure to check whether the robustness specification holds"""
-        correct = lbs[label]
-        others = ops.get_other_ubs(ubs, label)
 
-        # Naive check - very unlikely
-        if ops.max_upper(others) < correct:
-            return True
-        else:
-            # Create the matrices of the disjunctions
-            out_props = ops.create_disjunction_matrix(len(lbs), label)
-            bounds = {
-                'lower': lbs,
-                'upper': ubs
-            }
+        # Create the matrices of the disjunctions
+        out_props = ops.create_disjunction_matrix(len(lbs), label)
+        bounds = {
+            'lower': lbs,
+            'upper': ubs
+        }
 
-            # For each disjunction in the output property, check none is satisfied by output_bounds.
-            # If one disjunction is satisfied, then it represents a potential counter-example.
-            for i in range(len(others)):
-                result = ops.check_unsafe(bounds, out_props[i])
+        # For each disjunction in the output property, check none is satisfied by output_bounds.
+        # If one disjunction is satisfied, then it represents a counter-example.
+        for i in range(len(out_props)):
+            result = ops.check_unsafe(bounds, out_props[i])
 
-                if result == 1:
-                    return False
-                elif result == -1:
-                    return True
-                else:
-                    print('Unknown')
-                    return False
+            if result:
+                return False  # unsafe -> not robust
 
-            return True
+        return True
 
     def parse_layer(self) -> LinearLayer:
         """Procedure to read the first layer of a ONNX network"""
         nn = onnx.nn_from_weights(self.w_path, self.b_path)  # nn_from_onnx(self.onnx_path)
         return nn[0]
 
-    def propagate(self, lbs: mp.matrix, ubs: mp.matrix) -> tuple[mp.matrix, mp.matrix]:
+    def propagate(self, lbs: list[float], ubs: list[float]) -> tuple[list[float], list[float]]:
         """Procedure to compute the numeric interval bounds of a linear layer"""
         weights_plus = ops.get_positive(self.layer.weight)
         weights_minus = ops.get_negative(self.layer.weight)
 
-        low = weights_plus * lbs + weights_minus * ubs + self.layer.bias
-        upp = weights_plus * ubs + weights_minus * lbs + self.layer.bias
+        wpluslb = ops.matmul_mixed(weights_plus, lbs)
+        wplusub = ops.matmul_mixed(weights_plus, ubs)
+        wminlb = ops.matmul_mixed(weights_minus, lbs)
+        wminub = ops.matmul_mixed(weights_minus, ubs)
+
+        low = [wpluslb[i] + wminub[i] + self.layer.bias[i] for i in range(len(self.layer.bias))]
+        upp = [wplusub[i] + wminlb[i] + self.layer.bias[i] for i in range(len(self.layer.bias))]
 
         return low, upp
 

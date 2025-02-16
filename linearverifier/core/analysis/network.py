@@ -23,7 +23,7 @@ def test_accuracy(weights: str, bias: str) -> float:
 
     correct = 0
     for sample, label in test_set:
-        matmul = ops.matmul(weights_list, [[s.item()] for s in sample])
+        matmul = ops.matmul_2d(weights_list, [[s.item()] for s in sample])
         forward = [matmul[i][0] + bias_list[i] for i in range(len(bias_list))]
         pred = forward.index(max(forward))
         if pred == label:
