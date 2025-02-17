@@ -156,11 +156,11 @@ def check_in_radius(x: torch.Tensor | mp.matrix, x0: torch.Tensor) -> bool:
 
     if isinstance(x, torch.Tensor):
         for i in range(len(x)):
-            if x[i].item() > x0[i].item() + EPS_linf or x[i].item() < x0[i].item() - EPS_linf:
+            if x[i] > x0[i] + EPS_linf or x[i] < x0[i] - EPS_linf:
                 return False
     else:
         for i in range(len(x)):
-            if mp.mpf(x[i]) > x0[i].item() + EPS_linf or mp.mpf(x[i]) < x0[i].item() - EPS_linf:
+            if mp.mpf(x[i]) > mp.mpf(x0[i].item()) + EPS_linf or mp.mpf(x[i]) < mp.mpf(x0[i].item()) - EPS_linf:
                 return False
 
     return True
@@ -227,12 +227,17 @@ def main():
 
             # Step 1 - Find x_0 based on x_seed
             alpha, x_0 = find_x0(x_seed, pred, args.nn)
+            pred_x0 = predict(args.nn, x_0)
 
             print('***********************************')
             print(f'Original label of x_seed: {pred}')
             print(f'Prediction on x_seed: {predict(args.nn, x_seed)}')
             print(f'alpha = {alpha}')
-            print(f'Prediction on x_0 = alpha * x_seed: {predict(args.nn, x_0)}')
+            print(f'Prediction on x_0 = alpha * x_seed: {pred_x0}')
+
+            if predict(args.nn, x_seed) != pred:
+                with open(f'exception_sample_{sample}.txt') as e:
+                    e.write(f'P(xseed) = {pred}\nP(x0) = {pred_x0}\n')
 
             # Step 2 - Find x_adv where x_0 was deemed safe (both precise and truncated)
             x_adv = find_adv(x_0, pred, args.nn)

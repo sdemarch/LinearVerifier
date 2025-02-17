@@ -24,4 +24,4 @@ if __name__ == '__main__':
         model = LinearModel(args.net, 'Data/test_weights.txt', 'Data/test_bias.txt')
         result = model.verify(args.prop)
 
-    print(result)
+    print(f'Property verified: {result}')
