@@ -28,7 +28,7 @@ class LinearModel:
 
     @staticmethod
     def check_robust(lbs: list[float], ubs: list[float], label: int) -> bool:
-        """Procedure to check whether the robustness specification holds"""
+        """Procedure to check whether the robustness specification holds using numeric bounds"""
 
         # Create the matrices of the disjunctions
         out_props = ops.create_disjunction_matrix(len(lbs), label)
@@ -47,6 +47,24 @@ class LinearModel:
 
         return True
 
+    @staticmethod
+    def check_sym_robust(in_lbs: list[float], in_ubs: list[float], sym_bounds: tuple, label: int) -> bool:
+        """Procedure to check whether the robustness specification holds using symbolic bounds"""
+
+        # Propagate property as a layer
+        out_props = ops.create_disjunction_matrix(len(in_lbs), label)
+
+        # For each disjunction in the output property, check none is satisfied by output_bounds.
+        # If one disjunction is satisfied, then it represents a counter-example.
+        for i in range(len(out_props)):
+            """Check intersection with symbolic bounds"""
+            result = ops.check_unsafe_sym(sym_bounds, out_props[i], in_lbs, in_ubs)
+
+            if result:
+                return False
+
+        return True
+
     def parse_layer(self) -> LinearLayer:
         """Procedure to read the first layer of a ONNX network"""
         nn = onnx.nn_from_weights(self.w_path, self.b_path)  # nn_from_onnx(self.onnx_path)
@@ -57,10 +75,10 @@ class LinearModel:
         weights_plus = ops.get_positive(self.layer.weight)
         weights_minus = ops.get_negative(self.layer.weight)
 
-        wpluslb = ops.matmul_mixed(weights_plus, lbs)
-        wplusub = ops.matmul_mixed(weights_plus, ubs)
-        wminlb = ops.matmul_mixed(weights_minus, lbs)
-        wminub = ops.matmul_mixed(weights_minus, ubs)
+        wpluslb = ops.matmul_right(weights_plus, lbs)
+        wplusub = ops.matmul_right(weights_plus, ubs)
+        wminlb = ops.matmul_right(weights_minus, lbs)
+        wminub = ops.matmul_right(weights_minus, ubs)
 
         low = [wpluslb[i] + wminub[i] + self.layer.bias[i] for i in range(len(self.layer.bias))]
         upp = [wplusub[i] + wminlb[i] + self.layer.bias[i] for i in range(len(self.layer.bias))]
@@ -74,5 +92,9 @@ class LinearModel:
         # 2: Propagate input through linear layer
         out_lbs, out_ubs = self.propagate(in_lbs, in_ubs)
 
-        # 4: Check output
-        return LinearModel.check_robust(out_lbs, out_ubs, label)
+        # 3: Check intersection
+        numeric_check = LinearModel.check_robust(out_lbs, out_ubs, label)
+        if numeric_check:
+            return True
+        else:
+            return LinearModel.check_sym_robust(in_lbs, in_ubs, (self.layer.weight, self.layer.bias), label)

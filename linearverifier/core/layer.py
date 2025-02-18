@@ -20,7 +20,7 @@ class LinearLayer(Layer):
     def predict(self, x: list[float]) -> int:
         """Procedure to execute the matrix multiplication"""
 
-        matmul = ops.matmul_mixed(self.weight, x)
+        matmul = ops.matmul_right(self.weight, x)
         forward = [matmul[i] + self.bias[i] for i in range(len(self.bias))]
 
         return forward.index(max(forward))

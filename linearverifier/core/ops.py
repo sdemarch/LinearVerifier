@@ -28,21 +28,19 @@ def get_negative(a: list[list[float]]) -> list[list[float]]:
     return result
 
 
-def matmul_mixed(a: list[list[float]], b: list[float]) -> list[float]:
+def matmul_right(a: list[list[float]], b: list[float]) -> list[float]:
     """Procedure to compute the matrix product of a 2-d matrix and a vector"""
 
-    assert len(a[0]) == len(b)
+    new_b = [[x] for x in b]
+    result = matmul_2d(a, new_b)
+    return [x[0] for x in result]
 
-    n = len(a)
-    m = len(b)
 
-    result = [0 for _ in range(len(a))]
+def matmul_left(a: list[float], b: list[list[float]]) -> list[float]:
+    """Procedure to compute the matrix product of a vector and a 2-d matrix"""
 
-    for i in range(n):
-        for j in range(m):
-            result[i] += a[i][j] * b[j]
-
-    return result
+    new_a = [a]
+    return matmul_2d(new_a, b)[0]
 
 
 def matmul_2d(a: list[list[float]], b: list[list[float]]) -> list[list[float]]:
@@ -60,7 +58,7 @@ def matmul_2d(a: list[list[float]], b: list[list[float]]) -> list[list[float]]:
         for j in range(q):
             s = 0
             for k in range(m):
-                s += a[i][k] * b[k][0]
+                s += a[i][k] * b[k][j]
             result[i][j] = s
 
     return result
@@ -92,6 +90,24 @@ def check_unsafe(bounds: dict, matrix: list[float]) -> bool:
                  sum([m_minus[i] * ubs[i] for i in range(len(ubs))]))
 
     # Since we're linear we know for sure this is enough
+    if min_value > 1e-6:
+        return False
+    else:
+        return True
+
+
+def check_unsafe_sym(bounds: tuple, matrix: list[float], lbs: list[float], ubs: list[float]) -> bool:
+    """Procedure to check whether the output symbolic bounds are unsafe"""
+
+    out_m = matmul_left(matrix, bounds[0])
+    out_m_plus = [m if m > 0 else 0 for m in out_m]
+    out_m_minus = [m if m < 0 else 0 for m in out_m]
+    out_b = sum([matrix[k] * bounds[1][k] for k in range(len(matrix))])
+
+    min_value = (sum([out_m_plus[k] + lbs[k] for k in range(len(lbs))]) +
+                 sum([out_m_minus[k] + ubs[k] for k in range(len(ubs))]) +
+                 out_b)
+
     if min_value > 1e-6:
         return False
     else:

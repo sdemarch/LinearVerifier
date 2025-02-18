@@ -1,5 +1,3 @@
-import os
-
 import pynever.datasets as dt
 import torch
 from torchvision import transforms as tr
@@ -33,5 +31,5 @@ def test_accuracy(weights: str, bias: str) -> float:
 
 
 if __name__ == '__main__':
-    acc = test_accuracy('./../../../Data/mnist_weights.txt', './../../../Data/mnist_bias.txt')
+    acc = test_accuracy('./../../../Data/MNIST/mnist_weights.txt', './../../../Data/MNIST/mnist_bias.txt')
     print(f'Network accuracy: {acc:.2f}%')
