@@ -8,7 +8,7 @@ from linearverifier.core.layer import LinearLayer
 from linearverifier.parser import onnx
 from linearverifier.parser import vnnlib
 
-DATA_PATH = 'Data'
+DATA_PATH = 'Data/MNIST'
 
 
 class ModelOptions:
@@ -52,7 +52,7 @@ class LinearModel:
         """Procedure to check whether the robustness specification holds using symbolic bounds"""
 
         # Propagate property as a layer
-        out_props = ops.create_disjunction_matrix(len(in_lbs), label)
+        out_props = ops.create_disjunction_matrix(len(sym_bounds[0]), label)
 
         # For each disjunction in the output property, check none is satisfied by output_bounds.
         # If one disjunction is satisfied, then it represents a counter-example.
